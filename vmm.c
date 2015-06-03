@@ -213,8 +213,8 @@ void do_page_fault(Ptr_PageTableItem ptr_pageTabIt)
 		}
 	}
 	/* 没有空闲物理块，进行页面替换 */
-	do_LFU(ptr_pageTabIt);
-	//do_fifo(ptr_pageTabIt);
+	//do_LFU(ptr_pageTabIt);
+	do_fifo(ptr_pageTabIt);
 }
 
 /* 根据LFU算法进行页面替换 */
