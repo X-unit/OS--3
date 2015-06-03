@@ -1,0 +1,69 @@
+操作系统实验报告：实验三一虚存管理
+姓名 马群   学号 13061132 
+1需求说明
+1.1基本要求和提高要求
+基本要求：
+1、支持页表、辅存和实存内容的打印
+2、支持请求命令的手动输入（do_request()函数是随机生成请求）
+3、地址转换是否正确
+4、页面装入/页面交换是否正确
+5、存取控制是否正确
+6、读命令读取是否正确
+7、写命令实存内容是否正确写入
+提高要求：
+1、建立一个多级页表
+2、实现多道程序的存储控制
+3、将do_request()和do_response()实现在不同进程中，通过进程间通信（如FIFO）完成访存控制的模拟
+4、实现其它页面淘汰算法：如页面老化算法、最近最久未使用淘汰算法（LRU）、最优算法（OPT）等
+
+1.2完成情况
+基础要求和提高要求全部完成。
+2设计说明
+2.1流程示意图
+（课程中心的报告上有流程图）
+2.2所使用的系统调用的列表
+模拟虚存管理，无系统调用。
+2.3提高要求实现说明
+1、建立多级页表
+	用二位数组来代替二维页表，原页表大小为64，现在创建二位数组大小为4*16。在输出页表时也将输出页目录和也号。
+代码实现：
+PageTableItem pageTable[4][16];
+2、实现多道程序存储和控制
+	在页表项结构中添加进程号：unsigned int proccessNum;在访存指令结构中添加进程号：unsigned int proccessNum;
+在运行程序时，构造指令的同时也会产生相应的进程号，并且初始化页表的时候将前一半分给第0个进程，后一半分给第1个进程。处理请求时会判断进程号是否一致，不一致则会输出错误信息。
+	if(ptr_memAccReq->proccessNum != ptr_pageTabIt->proccessNum)
+	{
+		do_error(ERROR_INVALID_REQUEST);
+		return;
+	}
+3、将do_request()和do_response()实现在不同进程中，通过进程间通信（如FIFO）完成访存控制的模拟
+在vmm.c的主函数中创建FIFO文件:
+if(stat("/tmp/server",&statbuf)==0)
+	{
+		if(remove("/tmp/server")<0)
+			printf("remove failed\n");
+	}
+	if(mkfifo("/tmp/server",0666)<0)
+	{
+		printf("mkfifo failed\n");
+	}
+在while循环中读FIFO中的信息：
+if((fd=open("/tmp/server",O_RDONLY))<0)
+		printf("open fifo filled");
+
+	if((count=read(fd,ptr_memAccReq,sizeof(MemoryAccessRequest)))<0)
+		printf("wrong\n");
+新建write.c文件，构造指令，然后将其写入FIFO中：
+if((fd=open(FIFO_SERVER,O_WRONLY))<0){
+		printf("open fifo filed\n");
+	}
+	if(write(fd, ptr_memAccReq, sizeof(MemoryAccessRequest)) < 0)  
+		printf("write failed!\n");  
+		close(fd);
+4、实现先来先服务页面替换算法
+重写函数do_fifo();在页表项中增加属性unsigned int time;开始时初始化页表所有都为0，当装入块时便加一，以后每次处理一条指令，便将time加一，在需要替换页面时，便替换time最大的页面。
+3收获与感想
+3.1给予你帮助的人
+杨明嘉和文彬同学在提高要求第三和第四部分对我的帮助比较大。
+3.2从实验中学到的东西
+了解了分页式存储管理机制，掌握了虚存管理技术的大概内容。
